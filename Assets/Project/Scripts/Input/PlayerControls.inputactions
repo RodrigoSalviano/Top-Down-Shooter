@@ -16,22 +16,13 @@
                     "initialStateCheck": true
                 },
                 {
-                    "name": "Shoot",
-                    "type": "Button",
-                    "id": "b51b1b1a-05f2-4639-ba17-21f15dba3c4f",
-                    "expectedControlType": "",
+                    "name": "Point",
+                    "type": "Value",
+                    "id": "bc92dca8-da65-4ac6-9226-330a1ba1c491",
+                    "expectedControlType": "Vector2",
                     "processors": "",
                     "interactions": "",
-                    "initialStateCheck": false
-                },
-                {
-                    "name": "Pause",
-                    "type": "Button",
-                    "id": "85a3bfd1-79ef-4cb2-9669-186ebee48cb6",
-                    "expectedControlType": "",
-                    "processors": "",
-                    "interactions": "",
-                    "initialStateCheck": false
+                    "initialStateCheck": true
                 }
             ],
             "bindings": [
@@ -103,23 +94,12 @@
                 },
                 {
                     "name": "",
-                    "id": "88d30e1a-3f1f-4bfa-b3fb-2bbd9e650fea",
-                    "path": "",
+                    "id": "d736f58b-5ca9-4be4-bb88-aeb75114cad8",
+                    "path": "<Mouse>/{Point}",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "Shoot",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "449db1f0-b17b-4464-9b29-ab985eb89871",
-                    "path": "",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "Pause",
+                    "action": "Point",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }
