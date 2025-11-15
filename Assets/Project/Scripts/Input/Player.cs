@@ -8,16 +8,22 @@ public class Player : MonoBehaviour
 {
     private PlayerInput _input;
     private PlayerController _controller;
+    private GunController _gunController;
 
+    #region Input Actions
     private InputAction _move;
     private InputAction _point;
+    private InputAction _shoot;
+    #endregion
 
     void Awake()
     {
         _input = GetComponent<PlayerInput>();
         _controller = GetComponent<PlayerController>();
+        _gunController = GetComponent<GunController>();
         _move = _input.actions["Move"];
         _point = _input.actions["Point"];
+        _shoot = _input.actions["Shoot"];
     }
 
     void OnEnable()
@@ -29,12 +35,6 @@ public class Player : MonoBehaviour
     {
         _input?.DeactivateInput();
     }
-
-    void Start()
-    {
-        
-    }
-
 
     void Update()
     {
@@ -57,5 +57,13 @@ public class Player : MonoBehaviour
 
             _controller.LookAt(worldPoint);
         }
+
+        if (_shoot.IsPressed())
+        {
+            if(_gunController.Shoot()){
+            _controller.Recoil(_gunController.recoilForce);
+            }
+        }
+    
     }
 }

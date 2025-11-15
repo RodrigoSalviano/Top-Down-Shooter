@@ -31,4 +31,10 @@ public class PlayerController : MonoBehaviour
         Vector3 newPosition = _rb.position + velocity * Time.fixedDeltaTime;
         _rb.MovePosition(newPosition);
     }
+
+    public void Recoil(float force)
+    {
+        _rb.linearVelocity = Vector3.zero;
+        _rb.AddForce(-transform.forward * (force/10), ForceMode.Impulse);
+    }
 }
