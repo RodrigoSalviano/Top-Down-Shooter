@@ -4,7 +4,7 @@ using UnityEngine.InputSystem;
 
 [RequireComponent(typeof(PlayerInput))]
 [RequireComponent(typeof(PlayerController))]
-public class Player : MonoBehaviour
+public class Player : LivingEntity
 {
     private PlayerInput _input;
     private PlayerController _controller;
