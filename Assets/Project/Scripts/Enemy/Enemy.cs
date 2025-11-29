@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.AI;
@@ -11,15 +12,20 @@ public class Enemy : LivingEntity
     private State _currentState;
     private Material _skinMaterial;
     private Color _originalColor;
+    private LivingEntity _targetEntity;
 
+    [Header("Attack Settings")]
     [SerializeField] private float attackDistanceTreshHold = .5f;
-
-    [Header("Calculation per second (Path)")]
-    [SerializeField] private float refreshRate = .25f;
+    [SerializeField] private float damage;
     [SerializeField] private float timeBetweenAttacks = 1f;
     [SerializeField] private Color colorOnAttack;
 
-    private bool _hsTarget;
+    [Space(10)]
+    [Header("Calculation per second (Path)")]
+     [SerializeField] private float refreshRate = .25f;
+    
+
+    private bool _hasTarget;
     private float _nextAttackTime;
     private float _myCollisionRadius;
     private float _targetCollisionRadius;
@@ -37,9 +43,12 @@ public class Enemy : LivingEntity
         if(GameObject.FindGameObjectWithTag("Player") !=null)
         {
             _currentState = State.Chasing;
-            _hsTarget = true;
+            _hasTarget = true;
 
             _target = GameObject.FindGameObjectWithTag("Player").transform;
+            _targetEntity = _target.GetComponent<LivingEntity>();
+            _targetEntity.OnDeath += OnTargetDepth;
+
 
             _targetCollisionRadius = _target.GetComponent<CapsuleCollider>().radius;
 
@@ -52,7 +61,7 @@ public class Enemy : LivingEntity
 
     void Update()
     {
-        if (_hsTarget)
+        if (_hasTarget)
         {
             if(Time.time > _nextAttackTime)
             {
@@ -68,9 +77,14 @@ public class Enemy : LivingEntity
         }
     }
 
+    void OnTargetDepth()
+    {
+        _hasTarget = false;
+        _currentState = State.Idle;
+    }
+
     IEnumerator Attack()
     {
-        Debug.Log("ataque");
         _currentState = State.Attacking;
         _agent.enabled = false;
 
@@ -80,11 +94,19 @@ public class Enemy : LivingEntity
 
         float percent = 0;
         float attackSpeed = 3f;
+        bool hasAppliedDamage = false;
 
         _skinMaterial.color = colorOnAttack;
 
         while(percent <= 1)
         {
+
+            if(percent >= 0.5f && !hasAppliedDamage)
+            {
+                _targetEntity.TakeDamage(damage);
+                hasAppliedDamage = true;
+            }
+
             percent += Time.deltaTime * attackSpeed;
             float interpolation = (-Mathf.Pow(percent, 2) + percent) * 4;
             transform.position = Vector3.Lerp(originalPosition, attackPosition, interpolation);
@@ -100,7 +122,7 @@ public class Enemy : LivingEntity
 
     IEnumerator UpdatePath()
     {
-        while(_hsTarget){
+        while(_hasTarget){
             if(_currentState == State.Chasing){
                 Vector3 dirToTarget = (_target.position - transform.position).normalized;
                 Vector3 targetPositin = _target.position - dirToTarget * 

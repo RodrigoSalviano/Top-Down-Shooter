@@ -105,3 +105,5 @@ MonoBehaviour:
   collisionMask:
     serializedVersion: 2
     m_Bits: 192
+  _damage: 1
+  lifetime: 2

@@ -151,6 +151,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Enemy
   startingHealth: 3
   attackDistanceTreshHold: 0.5
-  refreshRate: 0.25
+  damage: 0
   timeBetweenAttacks: 1
   colorOnAttack: {r: 0.6075471, g: 0, b: 0.40492874, a: 0}
+  refreshRate: 0.25
