@@ -104,6 +104,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Projectile
   collisionMask:
     serializedVersion: 2
-    m_Bits: 192
+    m_Bits: 0
   _damage: 1
   lifetime: 2

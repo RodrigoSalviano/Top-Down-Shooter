@@ -9,12 +9,18 @@ public class Player : LivingEntity
     private PlayerInput _input;
     private PlayerController _controller;
     private GunController _gunController;
+    
 
     #region Input Actions
     private InputAction _move;
     private InputAction _point;
     private InputAction _shoot;
     #endregion
+
+    [SerializeField] private Animator _animator;
+    [SerializeField] private float timeBetweenEmote = 5f;
+
+    private float emoteTime;
 
     void Awake()
     {
@@ -42,6 +48,26 @@ public class Player : LivingEntity
         Vector3 move3D = new Vector3(move2D.x, 0, move2D.y);
 
         _controller.Move(move3D);
+        _animator.SetFloat("speed", move3D.magnitude);
+
+        if (move3D.magnitude <= 0)
+        {
+            emoteTime -= Time.deltaTime;
+
+            if(emoteTime <= 0){
+                emoteTime += timeBetweenEmote;
+                _animator.SetBool("Emote_1", true);
+            }
+            else
+            {
+            _animator.SetBool("Emote_1", false);
+            }
+        }
+        else
+        {
+            _animator.SetBool("Emote_1", false);
+        }
+        
 
         Vector2 screenPoint = _point.ReadValue<Vector2>();
         Ray ray = Camera.main.ScreenPointToRay(screenPoint);

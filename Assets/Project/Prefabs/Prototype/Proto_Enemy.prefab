@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 6704602900667753687}
   - component: {fileID: 7689781579501863623}
   - component: {fileID: 4017582290726315965}
-  m_Layer: 6
+  m_Layer: 3
   m_Name: Proto_Enemy
   m_TagString: Untagged
   m_Icon: {fileID: 0}

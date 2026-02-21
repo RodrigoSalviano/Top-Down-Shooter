@@ -5,6 +5,7 @@ public class GunController : MonoBehaviour
     [SerializeField] private Transform weaponHolder;
     [SerializeField] private Gun startingGun;
 
+
     public float recoilForce;
 
     private Gun _equippedGun;
@@ -15,6 +16,12 @@ public class GunController : MonoBehaviour
         {
             EquipGun(startingGun);
         }
+        /*
+        if(!Shoot())
+        {
+            SetBulletHold(weaponHolder.gameObject);
+        }
+        */
     }
 
     public void EquipGun(Gun gunToEquip)
@@ -27,6 +34,7 @@ public class GunController : MonoBehaviour
         _equippedGun = Instantiate(gunToEquip, weaponHolder.position, weaponHolder.rotation);
         _equippedGun.transform.parent = weaponHolder;
         recoilForce = _equippedGun.recoil;
+        _equippedGun.SetBulletHold(weaponHolder.gameObject);
     }
 
     public bool Shoot()
