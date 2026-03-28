@@ -2,225 +2,277 @@ using UnityEngine;
 using System.Collections.Generic;
 using Unity.Mathematics;
 using System;
+using Unity.VisualScripting;
 
 namespace ItsCalls.System{
-public class MapGenerator : MonoBehaviour
-{
-    [SerializeField] private Transform navmeshFlor;
-    [SerializeField] private float tileSize = 1f;
-
-    [SerializeField]private Map[] maps;
-    [SerializeField]private int mapIndex;
-
-    [Header("Map Settings")]
-    [SerializeField] private Transform tilePrefab;
-    [SerializeField] private Vector2 mapSize;
-    [SerializeField] private Transform obstaclePrefab;
-    [Range(0, 1)]
-    [SerializeField] private float obstaclePercent;
-    [SerializeField]private int _seed = 10;
-
-    [Range(0,1)]
-    [SerializeField] private float outlinePercent;
-    [SerializeField] private string mapHolder;
-
-    private Transform _tileHolder;
-
-    private List<Coord> _allTileCoords;
-    private Queue<Coord> _shuffledTileCoords;
-    private Coord _mapCentre;
-    private Map _currentMap;
-    private int maxX;
-    private int maxY;
-
-    void Start()
+    public class MapGenerator : MonoBehaviour
     {
-        GenerateMap();
-    }
+        public static MapGenerator Instance;
 
-    public void GenerateMap()
-    {
-        //Cria a lista de pares de coordenadas para cada tile do mapa
-        _allTileCoords = new List<Coord>();
-        _currentMap = maps[mapIndex];
-        
-        for(int x = 0; x < _currentMap.mapSize.x; x++){
-            for(int y = 0; y < _currentMap.mapSize.y; y++){
-                _allTileCoords.Add(new Coord(x, y));
-            }
-        }
+        [SerializeField]private Map[] maps;
+        [SerializeField]private int mapIndex;
 
-        //Cria uma fila de coordenadas embaralhadas para cada tile do mapa
-        _shuffledTileCoords = new Queue<Coord>(Utility.ShuffleArray(_allTileCoords.ToArray(), _currentMap.seed));
+        [Header("Map Settings")]
+        [SerializeField] private Transform tilePrefab;
+        [SerializeField] private Vector2 mapSize;
+        [SerializeField] private Transform obstaclePrefab;
+        [Range(0, 1)]
+        [SerializeField] private float obstaclePercent;
+        [SerializeField]private int _seed = 10;
+        [SerializeField] private Transform outerObstaclePrefab;
 
-        _mapCentre = _currentMap.MapCentre;
+        [Header("Tile Settings")]
+        [Range(1,10)]
+        [SerializeField] private float tileSize = 1f;
 
-        int obstacleCount = (int)(_currentMap.mapSize.x * _currentMap.mapSize.y * _currentMap.obstaclePercent);
-        int currentObstacleCount = 0;
+        [Range(0,1)]
+        [SerializeField] private float outlinePercent;
+        [SerializeField] private string mapHolder;
 
-         Transform oldMap = transform.Find(mapHolder);
-        if(oldMap != null)
-        {
-            DestroyImmediate(oldMap.gameObject);
-        }
+        [Header("Nav Settings")]
+        [SerializeField] private Transform navmeshFlor;
 
-        _tileHolder = new GameObject(mapHolder).transform;
-        _tileHolder.SetParent(transform);
+        private Transform _tileHolder;
 
-        for(int x = 0; x < _currentMap.mapSize.x; x++)
-        {
-            for(int y =0; y < _currentMap.mapSize.y; y++){
-                Vector3 tilePosition = new Vector3(
-                    -_currentMap.mapSize.x /2 + 0.5f + x, 
-                    0,
-                    -_currentMap.mapSize.y /2 + 0.5f + y
-                );
+        private List<Coord> _allTileCoords;
+        private List<Coord> _allOpenTiles;
+        private Queue<Coord> _shuffledTileCoords;
+        private Queue<Coord> _shuffleOpenTiles;
+        private Coord _mapCentre;
+        private Map _currentMap;
+        private Transform[ , ] _tileMap;
+        private int maxX;
+        private int maxY;
 
-                Transform newTile = Instantiate(_currentMap.tilePrefab, tilePosition, _currentMap.tilePrefab.rotation);
-                newTile.localScale = Vector3.one * (1 - outlinePercent);
-                newTile.SetParent(_tileHolder);
-            }
-        }
-         bool [,] obstacleMap = new bool[
-            _currentMap.mapSize.x,
-            _currentMap.mapSize.y
-            ] ;
-
-
-        for(int i = 0; i < obstacleCount; i++)
-        {
-            Coord randomCoord = GetRandomCoord();
-            obstacleMap[randomCoord.x, randomCoord.y] = true;
-            currentObstacleCount ++;
-            
-            //Validation
-            if(randomCoord != _currentMap.MapCentre && MapIsFullAccessible(obstacleMap, currentObstacleCount))
+            void Awake()
             {
-                Vector3 obstaclePosition = CoordToWorldPosition(randomCoord.x, randomCoord.y);
-                Transform newObstacle = Instantiate(_currentMap.obstaclePrefab, obstaclePosition + Vector3.up * 0.5f, Quaternion.identity);
-                newObstacle.SetParent(_tileHolder);
-            }
-            else
-            {
-                obstacleMap[randomCoord.x, randomCoord.y] = false;
-                currentObstacleCount--;
-            }
-        }
-
-        maxX = _currentMap.mapSize.x;
-        maxY = _currentMap.mapSize.y;
-
-        for (int x = -1; x <= maxX; x++)
-        {
-            CreateOuterObstacle(x, -1); 
-            CreateOuterObstacle(x, maxY);
-        }
-
-        for (int y = 0; y < maxY; y++)
-        {
-            CreateOuterObstacle(-1, y); 
-            CreateOuterObstacle(maxX, y);
-        }
-
-        navmeshFlor.localScale = new Vector3(
-            _currentMap.mapSize.x / 10,
-0,
-            _currentMap.mapSize.y / 10
-        ) * tileSize;
-
-
-    }
-
-    private bool MapIsFullAccessible(bool[,] obstacleMap, int currentObstacleCount)
-    {
-        bool[,] mapFlags = new bool[obstacleMap.GetLength(0), obstacleMap.GetLength(1)];
-
-        Queue<Coord> queue = new Queue<Coord>();
-        queue.Enqueue(_currentMap.MapCentre);
-        mapFlags[_currentMap.MapCentre.x, _currentMap.MapCentre.y] = true;
-        int accessbibleTileCount = 1;
-
-        while (queue.Count > 0)
-        {
-            Coord tile = queue.Dequeue();
-
-            for(int x = -1; x <= 1; x++)
-            {
-                for(int y = -1; y <= 1; y++)
+                if(Instance == null)
                 {
-                    if( x == 0 || y == 0)
-                    {
-                        int neighbourX = tile.x + x;
-                        int neighbourY = tile.y + y;
+                    Instance = this;
+                    return;
+                }
 
-                        if(neighbourX >= 0 && neighbourX < obstacleMap.GetLength(0) && 
-                        neighbourY >= 0 && neighbourY < obstacleMap.GetLength(1))
+                Destroy(gameObject);
+            }
+
+            void Start()
+        {
+            GenerateMap();
+        }
+
+        public void GenerateMap()
+        {
+            //Cria a lista de pares de coordenadas para cada tile do mapa
+            _allTileCoords = new List<Coord>();
+            _currentMap = maps[mapIndex];
+
+            _tileMap = new Transform[_currentMap.mapSize.x, _currentMap.mapSize.y];
+
+            GetComponent<BoxCollider>().size = new Vector3(_currentMap.mapSize.x * tileSize, 0.05f, _currentMap.mapSize.y * tileSize);
+
+            for(int x = 0; x < _currentMap.mapSize.x; x++){
+                for(int y = 0; y < _currentMap.mapSize.y; y++){
+                    _allTileCoords.Add(new Coord(x, y));
+                }
+            }
+
+             _allOpenTiles = new List<Coord>(_allTileCoords);
+
+            //Cria uma fila de coordenadas embaralhadas para cada tile do mapa
+            _shuffledTileCoords = new Queue<Coord>(Utility.ShuffleArray(_allTileCoords.ToArray(), _currentMap.seed));
+
+            _mapCentre = _currentMap.MapCentre;
+
+            int obstacleCount = (int)(_currentMap.mapSize.x * _currentMap.mapSize.y * _currentMap.obstaclePercent);
+            int currentObstacleCount = 0;
+
+             Transform oldMap = transform.Find(mapHolder);
+            if(oldMap != null)
+            {
+                DestroyImmediate(oldMap.gameObject);
+            }
+
+            _tileHolder = new GameObject(mapHolder).transform;
+            _tileHolder.SetParent(transform);
+
+            for(int x = 0; x < _currentMap.mapSize.x; x++)
+            {
+                for(int y =0; y < _currentMap.mapSize.y; y++){
+                    Vector3 tilePosition = CoordToWorldPosition(x, y);
+
+                    Transform newTile = Instantiate(_currentMap.tilePrefab, tilePosition, _currentMap.tilePrefab.rotation);
+                    newTile.localScale = Vector3.one * (1 - outlinePercent) * tileSize;
+                    newTile.SetParent(_tileHolder);
+
+                    _tileMap[x, y] = newTile;
+                }
+            }
+             bool [,] obstacleMap = new bool[
+                _currentMap.mapSize.x,
+                _currentMap.mapSize.y
+                ] ;
+
+
+            for(int i = 0; i < obstacleCount; i++)
+            {
+                Coord randomCoord = GetRandomCoord();
+                obstacleMap[randomCoord.x, randomCoord.y] = true;
+                currentObstacleCount ++;
+
+                //Validation
+                if(randomCoord != _currentMap.MapCentre && MapIsFullAccessible(obstacleMap, currentObstacleCount))
+                {
+                    Vector3 obstaclePosition = CoordToWorldPosition(randomCoord.x, randomCoord.y);
+                    Transform newObstacle = Instantiate(_currentMap.obstaclePrefab, obstaclePosition + Vector3.up * 0.5f, Quaternion.identity);
+                    newObstacle.SetParent(_tileHolder);
+                    newObstacle.localScale = Vector3.one * (1 - outlinePercent) * tileSize;
+
+                    _allOpenTiles.Remove(randomCoord);
+                }
+                else
+                {
+                    obstacleMap[randomCoord.x, randomCoord.y] = false;
+                    currentObstacleCount--;
+                }
+            }
+
+            _shuffleOpenTiles = new Queue<Coord>(Utility.ShuffleArray(_allOpenTiles.ToArray(), _currentMap.seed));
+
+            maxX = _currentMap.mapSize.x;
+            maxY = _currentMap.mapSize.y;
+
+            for (int x = -1; x <= maxX; x++)
+            {
+                CreateOuterObstacle(x, -1); 
+                CreateOuterObstacle(x, maxY);
+            }
+
+            for (int y = 0; y < maxY; y++)
+            {
+                CreateOuterObstacle(-1, y); 
+                CreateOuterObstacle(maxX, y);
+            }
+
+            navmeshFlor.localScale = new Vector3(
+                _currentMap.mapSize.x / 10f,
+    0,
+                _currentMap.mapSize.y / 10f
+            ) * tileSize;
+
+
+        }
+
+        private bool MapIsFullAccessible(bool[,] obstacleMap, int currentObstacleCount)
+        {
+            bool[,] mapFlags = new bool[obstacleMap.GetLength(0), obstacleMap.GetLength(1)];
+
+            Queue<Coord> queue = new Queue<Coord>();
+            queue.Enqueue(_currentMap.MapCentre);
+            mapFlags[_currentMap.MapCentre.x, _currentMap.MapCentre.y] = true;
+            int accessbibleTileCount = 1;
+
+            while (queue.Count > 0)
+            {
+                Coord tile = queue.Dequeue();
+
+                for(int x = -1; x <= 1; x++)
+                {
+                    for(int y = -1; y <= 1; y++)
+                    {
+                        if( x == 0 || y == 0)
                         {
-                            if(!mapFlags[neighbourX , neighbourY] && !obstacleMap[neighbourX, neighbourY])
+                            int neighbourX = tile.x + x;
+                            int neighbourY = tile.y + y;
+
+                            if(neighbourX >= 0 && neighbourX < obstacleMap.GetLength(0) && 
+                            neighbourY >= 0 && neighbourY < obstacleMap.GetLength(1))
                             {
-                                mapFlags[neighbourX, neighbourY] = true;
-                                queue.Enqueue(new Coord(neighbourX, neighbourY));
-                                accessbibleTileCount++;
+                                if(!mapFlags[neighbourX , neighbourY] && !obstacleMap[neighbourX, neighbourY])
+                                {
+                                    mapFlags[neighbourX, neighbourY] = true;
+                                    queue.Enqueue(new Coord(neighbourX, neighbourY));
+                                    accessbibleTileCount++;
+                                }
                             }
+
                         }
-                        
                     }
                 }
             }
+
+            int targetTileCount = _currentMap.mapSize.x * _currentMap.mapSize.y - currentObstacleCount;
+            return targetTileCount == accessbibleTileCount;
         }
 
-        int targetTileCount = _currentMap.mapSize.x * _currentMap.mapSize.y - currentObstacleCount;
-        return targetTileCount == accessbibleTileCount;
-    }
-
-    private Vector3 CoordToWorldPosition( int _x, int _y)
-    {
-     Vector3 worldPos = new Vector3(
-        -_currentMap.mapSize.x /2 + 0.5f + _x,
-         0,
-          -_currentMap.mapSize.y /2 + 0.5f + _y);
-     return worldPos;
-    }
-
-    private void CreateOuterObstacle(int x, int y)
-    {
-        Vector3 pos = CoordToWorldPosition(x, y);
-        Transform newObstacle = Instantiate(
-            obstaclePrefab,
-            pos + Vector3.up * .5f,
-            Quaternion.identity
-        );
-        newObstacle.localScale = Vector3.one * (1 - outlinePercent) * tileSize;
-        newObstacle.parent = transform.Find("Generated Map");
-    }
-
-    private Coord GetRandomCoord()
-    {
-        Coord randomCoord = _shuffledTileCoords.Dequeue();
-        _shuffledTileCoords.Enqueue(randomCoord);
-        return randomCoord;
-    }
-
-    [Serializable]
-    public struct Coord
-    {
-        public int x;
-        public int y;
-
-        public Coord (int _x, int _y){
-            x = _x;
-            y = _y;
-        }
-
-        public static bool operator ==(Coord c1, Coord c2)
+        private Vector3 CoordToWorldPosition( int _x, int _y)
         {
-            return c1.x == c2.x && c1.y == c2.y;
+         Vector3 worldPos = new Vector3(
+            -_currentMap.mapSize.x /2f + 0.5f + _x,
+             0,
+              -_currentMap.mapSize.y /2f + 0.5f + _y)* tileSize;
+         return worldPos;
         }
 
-        public static bool operator !=(Coord c1, Coord c2)
+        public Transform GetTileFromPosition(Vector3 position)
+            {
+                int x = Mathf.RoundToInt(position.x / tileSize + (_currentMap.mapSize.x - 1) / 2f);
+                int y = Mathf.RoundToInt(position.z / tileSize + (_currentMap.mapSize.x - 1) / 2f);
+
+                x = Mathf.Clamp(x, 0, _tileMap.GetLength(0) - 1);
+                y = Mathf.Clamp(y, 0, _tileMap.GetLength(1) - 1);
+
+
+                return _tileMap[x, y];
+            }
+
+        private void CreateOuterObstacle(int x, int y)
         {
-            return c1.x != c2.x && c1.y != c2.y;
+            Vector3 pos = CoordToWorldPosition(x, y);
+            Transform newObstacle = Instantiate(
+                outerObstaclePrefab,
+                pos + Vector3.up * .5f,
+                Quaternion.identity
+            );
+            newObstacle.localScale = Vector3.one * (1 - outlinePercent) * tileSize;
+            newObstacle.parent = transform.Find("Generated Map");
+            newObstacle.SetParent(_tileHolder);
+        }
+
+        private Coord GetRandomCoord()
+        {
+            Coord randomCoord = _shuffledTileCoords.Dequeue();
+            _shuffledTileCoords.Enqueue(randomCoord);
+            return randomCoord;
+        }
+
+        public Transform GetRandomOpenTile()
+        {
+            Coord randomCoord = _shuffleOpenTiles.Dequeue();
+            _shuffleOpenTiles.Enqueue(randomCoord);
+            return _tileMap[randomCoord.x, randomCoord.y];
+        }
+
+
+        [Serializable]
+        public struct Coord
+        {
+            public int x;
+            public int y;
+
+            public Coord (int _x, int _y){
+                x = _x;
+                y = _y;
+            }
+
+            public static bool operator ==(Coord c1, Coord c2)
+            {
+                return c1.x == c2.x && c1.y == c2.y;
+            }
+
+            public static bool operator !=(Coord c1, Coord c2)
+            {
+                return c1.x != c2.x && c1.y != c2.y;
+            }
         }
     }
-}
-}
+    }
