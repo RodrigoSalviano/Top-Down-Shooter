@@ -3,9 +3,9 @@ using System;
 
 public class LivingEntity : MonoBehaviour, IDamageable
 {
-    [SerializeField] private float startingHealth = 5f;
+    public float startingHealth = 5f;
 
-    private float _health;
+    protected float _health;
     protected bool _dead;
 
     public event Action OnDeath;
@@ -15,7 +15,7 @@ public class LivingEntity : MonoBehaviour, IDamageable
         _health = startingHealth;
     }
 
-    public virtual void TakeHit(float damage, RaycastHit hit)
+    public virtual void TakeHit(float damage, Vector3 hitPoint, Vector3 hitDirection)
     {
         TakeDamage(damage);
     }
@@ -30,7 +30,8 @@ public class LivingEntity : MonoBehaviour, IDamageable
         }
     }
 
-    private void Die()
+    [ContextMenu("Die")]
+    public virtual void Die()
     {
         _dead = true;
         OnDeath?.Invoke();

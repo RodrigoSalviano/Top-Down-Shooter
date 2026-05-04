@@ -23,39 +23,44 @@ public class Enemy : LivingEntity
     [Space(10)]
     [Header("Calculation per second (Path)")]
      [SerializeField] private float refreshRate = .25f;
+
+    [Header("Effects")]
+    [SerializeField] private ParticleSystem deathEffect;
     
 
     private bool _hasTarget;
     private float _nextAttackTime;
     private float _myCollisionRadius;
     private float _targetCollisionRadius;
-    
 
-    protected override void Start()
+    private void Awake()
     {
-        base.Start();
-
         _agent = GetComponent<NavMeshAgent>();
         _myCollisionRadius = GetComponent<CapsuleCollider>().radius;
         _skinMaterial = GetComponent<Renderer>().material;
-        _originalColor = _skinMaterial.color;
-
-        if(GameObject.FindGameObjectWithTag("Player") !=null)
+         if(GameObject.FindGameObjectWithTag("Player") != null)
         {
-            _currentState = State.Chasing;
             _hasTarget = true;
 
             _target = GameObject.FindGameObjectWithTag("Player").transform;
             _targetEntity = _target.GetComponent<LivingEntity>();
             _targetEntity.OnDeath += OnTargetDepth;
 
-
             _targetCollisionRadius = _target.GetComponent<CapsuleCollider>().radius;
 
+        }
+    }
+
+    protected override void Start()
+    {
+        base.Start();
+
+        if(_hasTarget)
+        {
+            _currentState = State.Chasing;
+ 
             StartCoroutine(UpdatePath());
         }
-
-        
 
     }
 
@@ -75,6 +80,33 @@ public class Enemy : LivingEntity
                 } 
             }
         }
+    }
+
+    public void SetCharacterstics(float movespeed, float turnSpeed, int hitsToKillPlayer, float enemyHealth, Color skinColor)
+    {
+        _agent.speed = movespeed;
+        _agent.angularSpeed = turnSpeed;
+        if (_hasTarget)
+        {
+            damage = Mathf.Ceil(_targetEntity.startingHealth / hitsToKillPlayer);
+        }
+        startingHealth = enemyHealth;
+
+        _skinMaterial.color = skinColor;
+        _originalColor = skinColor;
+    }
+
+    public override void TakeHit(float damage, Vector3 hitPoint, Vector3 hitDirection)
+    {
+        if(damage >= _health)
+        {
+            Destroy(
+                Instantiate(deathEffect, hitPoint, Quaternion.FromToRotation(Vector3.forward, hitDirection)),
+                deathEffect.main.startLifetime.constant
+            );
+        }
+
+        base.TakeHit(damage, hitPoint, hitDirection);
     }
 
     void OnTargetDepth()

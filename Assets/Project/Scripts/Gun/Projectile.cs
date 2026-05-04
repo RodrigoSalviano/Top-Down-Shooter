@@ -4,7 +4,7 @@ using UnityEngine.WSA;
 public class Projectile : MonoBehaviour
 {
     [SerializeField] LayerMask collisionMask;
-    [SerializeField]private float _damage = 1;
+    [SerializeField] private float _damage = 1;
     [SerializeField] private float lifetime;
 
     private float _speed;
@@ -46,7 +46,7 @@ public class Projectile : MonoBehaviour
         //Debug.Log(_hit.collider.gameObject.name);
 
         if(_hit.collider.TryGetComponent(out IDamageable colliderObject)){
-            colliderObject.TakeHit(_damage, _hit);
+            colliderObject.TakeHit(_damage, _hit.point, transform.forward);
         }
 
         Destroy(gameObject);

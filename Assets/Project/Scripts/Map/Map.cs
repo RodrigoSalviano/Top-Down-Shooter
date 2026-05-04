@@ -13,6 +13,7 @@ namespace ItsCalls.System
         public int seed;
         public Transform tilePrefab;
         public Transform obstaclePrefab;
+        public Color BackGroundColor;
 
         public MapGenerator.Coord MapCentre
         {

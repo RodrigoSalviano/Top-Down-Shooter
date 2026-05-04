@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Unity.Mathematics;
 using System;
 using Unity.VisualScripting;
+using Unity.AI.Navigation;
 
 namespace ItsCalls.System{
     public class MapGenerator : MonoBehaviour
@@ -20,6 +21,7 @@ namespace ItsCalls.System{
         [SerializeField] private float obstaclePercent;
         [SerializeField]private int _seed = 10;
         [SerializeField] private Transform outerObstaclePrefab;
+        [SerializeField] private Transform groundBacking;
 
         [Header("Tile Settings")]
         [Range(1,10)]
@@ -31,6 +33,10 @@ namespace ItsCalls.System{
 
         [Header("Nav Settings")]
         [SerializeField] private Transform navmeshFlor;
+        [SerializeField] private NavMeshSurface navMeshSurface;
+
+        [Header("Spwaner")]
+        [SerializeField] private Spawner spawner;
 
         private Transform _tileHolder;
 
@@ -43,33 +49,49 @@ namespace ItsCalls.System{
         private Transform[ , ] _tileMap;
         private int maxX;
         private int maxY;
+        private Material groundbkMaterial;
 
-            void Awake()
-            {
-                if(Instance == null)
-                {
-                    Instance = this;
-                    return;
-                }
-
-                Destroy(gameObject);
-            }
-
-            void Start()
+        void Awake()
         {
+            if(Instance == null)
+            {
+                Instance = this;
+                return;
+            }
+            Destroy(gameObject);
+        }
+
+        void OnEnable()
+        {
+            spawner.OnNewWave += OnNewWave;
+        }
+
+        void OnNewWave(int waveNumber)
+        {
+            mapIndex = waveNumber - 1;
             GenerateMap();
         }
 
         public void GenerateMap()
         {
-            //Cria a lista de pares de coordenadas para cada tile do mapa
-            _allTileCoords = new List<Coord>();
-            _currentMap = maps[mapIndex];
+            if(mapIndex >= maps.Length)
+            {
+                Debug.LogWarning("Sem mais mapas");
+                return;
+            }
 
+            if(groundbkMaterial == null)
+            {
+             groundbkMaterial = groundBacking.GetComponent<Renderer>().sharedMaterial;   
+            }
+            
+            _currentMap = maps[mapIndex];
             _tileMap = new Transform[_currentMap.mapSize.x, _currentMap.mapSize.y];
 
-            GetComponent<BoxCollider>().size = new Vector3(_currentMap.mapSize.x * tileSize, 0.05f, _currentMap.mapSize.y * tileSize);
+            //Cria a lista de pares de coordenadas para cada tile do mapa
 
+
+            _allTileCoords = new List<Coord>();
             for(int x = 0; x < _currentMap.mapSize.x; x++){
                 for(int y = 0; y < _currentMap.mapSize.y; y++){
                     _allTileCoords.Add(new Coord(x, y));
@@ -113,6 +135,24 @@ namespace ItsCalls.System{
                 ] ;
 
 
+
+            maxX = _currentMap.mapSize.x;
+            maxY = _currentMap.mapSize.y;
+
+            for (int x = -1; x <= maxX; x++)
+            {
+                CreateOuterObstacle(x, -1); 
+                CreateOuterObstacle(x, maxY);
+            }
+
+            for (int y = 0; y < maxY; y++)
+            {
+                CreateOuterObstacle(-1, y); 
+                CreateOuterObstacle(maxX, y);
+            }
+
+            
+            
             for(int i = 0; i < obstacleCount; i++)
             {
                 Coord randomCoord = GetRandomCoord();
@@ -138,29 +178,18 @@ namespace ItsCalls.System{
 
             _shuffleOpenTiles = new Queue<Coord>(Utility.ShuffleArray(_allOpenTiles.ToArray(), _currentMap.seed));
 
-            maxX = _currentMap.mapSize.x;
-            maxY = _currentMap.mapSize.y;
-
-            for (int x = -1; x <= maxX; x++)
-            {
-                CreateOuterObstacle(x, -1); 
-                CreateOuterObstacle(x, maxY);
-            }
-
-            for (int y = 0; y < maxY; y++)
-            {
-                CreateOuterObstacle(-1, y); 
-                CreateOuterObstacle(maxX, y);
-            }
-
             navmeshFlor.localScale = new Vector3(
                 _currentMap.mapSize.x / 10f,
-    0,
+             0f,
                 _currentMap.mapSize.y / 10f
             ) * tileSize;
 
+            groundBacking.localScale = navmeshFlor.localScale + Vector3.up * 0.1f;
+            groundbkMaterial.color = _currentMap.BackGroundColor;
 
+            navMeshSurface.BuildNavMesh();
         }
+        
 
         private bool MapIsFullAccessible(bool[,] obstacleMap, int currentObstacleCount)
         {
