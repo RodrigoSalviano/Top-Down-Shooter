@@ -39,6 +39,10 @@ public class Gun : MonoBehaviour
     [SerializeField] private Vector2 recoilAnleMinMax = new Vector2(3f, 5f);
     [SerializeField] private float recoilRotateSettleTime = .1f;
 
+    [Header("Audio Settings")]
+    [SerializeField] private AudioClip shotSFX;
+    [SerializeField] private AudioClip reloadSFX;
+
     #region Properties
     public float Recoil => recoil;
     #endregion
@@ -106,6 +110,7 @@ public class Gun : MonoBehaviour
             transform.localPosition -= Vector3.forward * Random.Range(kickMinMax.x, kickMinMax.y);
             _recoilAngle += Random.Range(recoilAnleMinMax.x, recoilAnleMinMax.y);
             _recoilAngle = Mathf.Clamp(_recoilAngle, 0, 30f);
+            AudioManager.Instance.PlaySoundFX(shotSFX, transform.position);
 
             return true;
         }
@@ -116,6 +121,7 @@ public class Gun : MonoBehaviour
     {
         if(_isReloading || _shotsRemainingInMagazine == magazineSize) return;
 
+        AudioManager.Instance.PlaySoundFX(reloadSFX, transform.position);
         StartCoroutine(AnimateReload());
 
     }

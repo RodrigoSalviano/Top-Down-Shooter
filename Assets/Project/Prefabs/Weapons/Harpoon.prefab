@@ -1131,6 +1131,9 @@ MonoBehaviour:
     type: 3}
   burstCount: 3
   recoil: 0
+  magazineSize: 0
+  reloadTime: 0
+  maxReloadAngle: 0
   muzzles:
   - {fileID: 5681265915185569951}
   muzzleVelocity: 20
@@ -1139,6 +1142,10 @@ MonoBehaviour:
   ejectionPoint: {fileID: 3992270472912431248}
   kickMinMax: {x: 0.5, y: 0.2}
   recoilMoveSettleTime: 0.1
+  recoilAnleMinMax: {x: 3, y: 5}
+  recoilRotateSettleTime: 0.1
+  shotSFX: {fileID: 8300000, guid: bec60687073cd4c4188846f6724fd6fd, type: 3}
+  reloadSFX: {fileID: 8300000, guid: 848e5576b5b559248b41d6243f4c3bb1, type: 3}
 --- !u!114 &3318554198808198881
 MonoBehaviour:
   m_ObjectHideFlags: 0

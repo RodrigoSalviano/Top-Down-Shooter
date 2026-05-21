@@ -349,6 +349,8 @@ MonoBehaviour:
   recoilMoveSettleTime: 0.1
   recoilAnleMinMax: {x: 20, y: 30}
   recoilRotateSettleTime: 0.1
+  shotSFX: {fileID: 8300000, guid: 43aba4420ff5fc74eb94f33e1b3920c5, type: 3}
+  reloadSFX: {fileID: 8300000, guid: 848e5576b5b559248b41d6243f4c3bb1, type: 3}
 --- !u!114 &3033395823881000556
 MonoBehaviour:
   m_ObjectHideFlags: 0

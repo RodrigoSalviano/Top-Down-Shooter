@@ -164,6 +164,34 @@
                     "isPartOfComposite": false
                 }
             ]
+        },
+        {
+            "name": "Debug",
+            "id": "41b7be61-7e55-4a85-aeee-f78e4d5e6560",
+            "actions": [
+                {
+                    "name": "Debug_play_Main_Theme_Music",
+                    "type": "Button",
+                    "id": "cd169e6b-0be7-45be-ba98-5c7eb138cfb4",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "8dc2aff8-aac1-4394-856b-3d91bb0ba0b2",
+                    "path": "<Keyboard>/f3",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Debug_play_Main_Theme_Music",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
         }
     ],
     "controlSchemes": []
