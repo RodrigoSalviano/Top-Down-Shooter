@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -11,6 +12,7 @@ public class Enemy : LivingEntity
     private Transform _target;
     private State _currentState;
     private Material _skinMaterial;
+    private Material _sharedSkinMaterial;
     private Color _originalColor;
     private LivingEntity _targetEntity;
 
@@ -37,7 +39,6 @@ public class Enemy : LivingEntity
     {
         _agent = GetComponent<NavMeshAgent>();
         _myCollisionRadius = GetComponent<CapsuleCollider>().radius;
-        _skinMaterial = GetComponent<Renderer>().material;
          if(GameObject.FindGameObjectWithTag("Player") != null)
         {
             _hasTarget = true;
@@ -92,6 +93,7 @@ public class Enemy : LivingEntity
         }
         startingHealth = enemyHealth;
 
+        _skinMaterial = GetComponent<Renderer>().sharedMaterial;
         _skinMaterial.color = skinColor;
         _originalColor = skinColor;
     }

@@ -46,6 +46,8 @@ public class Player : LivingEntity
 
         _debugNextWave = _input.actions["Debug_NextWave"];
         crosshair = Instantiate(crosshair, Vector3.zero, crosshair.transform.rotation);
+
+        FindAnyObjectByType<Spawner>().OnNewWave += OnNewWave;
     }
 
     void OnEnable()
@@ -113,7 +115,7 @@ public class Player : LivingEntity
         if (_shoot.IsPressed())
         {
             if(_gunController.OnTriggerHold()){
-            _controller.Recoil(_gunController.recoilForce);
+            _controller.Recoil(_gunController.RecoilForce);
             }
         }
 
@@ -131,6 +133,12 @@ public class Player : LivingEntity
         {
             OnDebugNextWave?.Invoke();
         }
+    }
+
+    private void OnNewWave(int waveIndex)
+    {
+        _health = startingHealth;
+        _gunController.EquipGun(waveIndex - 1);
     }
 
      public override void Die()

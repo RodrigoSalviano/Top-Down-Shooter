@@ -3,26 +3,12 @@ using UnityEngine;
 public class GunController : MonoBehaviour
 {   
     [SerializeField] private Transform weaponHolder;
-    [SerializeField] private Gun startingGun;
+    [SerializeField] private Gun[] allGuns;
+    [SerializeField]private float recoilForce;
 
-
-    public float recoilForce;
+    public float RecoilForce => recoilForce;
 
     private Gun _equippedGun;
-
-    void Start()
-    {
-        if(startingGun != null)
-        {
-            EquipGun(startingGun);
-        }
-        /*
-        if(!Shoot())
-        {
-            SetBulletHold(weaponHolder.gameObject);
-        }
-        */
-    }
 
     public void Reload()
     {
@@ -43,6 +29,14 @@ public class GunController : MonoBehaviour
         _equippedGun.transform.parent = weaponHolder;
         recoilForce = _equippedGun.Recoil;
         //_equippedGun.SetBulletHold(weaponHolder.gameObject);
+    }
+
+    public void EquipGun(int gunIndex)
+    {
+        if(gunIndex < allGuns.Length)
+        {
+            EquipGun(allGuns[gunIndex]);
+        }
     }
 
     public bool OnTriggerHold()

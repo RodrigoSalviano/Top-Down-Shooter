@@ -89,6 +89,7 @@ MeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
 --- !u!114 &-1507722384466780636
 MonoBehaviour:
@@ -104,6 +105,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Projectile
   collisionMask:
     serializedVersion: 2
-    m_Bits: 0
-  _damage: 1
+    m_Bits: 72
+  _damage: 3
   lifetime: 2

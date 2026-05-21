@@ -38,6 +38,9 @@ public class Spawner : MonoBehaviour
     private Transform _player_T;
     #endregion
 
+    public int EnemysCount => _currentWave.enemysCount;
+    public bool IsCurrentWaveInfinity => _currentWave.isInfinit;
+
     public event Action<int> OnNewWave;
 
     private bool _isDisable;
