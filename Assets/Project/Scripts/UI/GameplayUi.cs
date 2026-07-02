@@ -3,21 +3,36 @@ using TMPro;
 using UnityEngine.UI;
 using System.Collections;
 using UnityEngine.SceneManagement;
+using Unity.VisualScripting;
 
 public class GameplayUI: MonoBehaviour
 {   
+    [Header("References")]
+    [SerializeField] private Player player;
+
+    [Header("New Wave Banner")]
     [SerializeField] private RectTransform wavePanel;
     [SerializeField] private TMP_Text waveLabel;
     [SerializeField] private TMP_Text enemyCountLabel;
 
+    [Header("Game over")]
     [SerializeField] private Image fadeBackground;
     [SerializeField] private GameObject gameOverUI;
     [SerializeField] private Color fadeColor;
     [SerializeField] private float fadeDuration;
 
-    [SerializeField] private Player player;
+    [Header("Score")]
+    [SerializeField] private ScoreManager scoreManager;
+    [SerializeField] private TMP_Text gameplayScoreText;
+    [SerializeField] private TMP_Text finalScoreText;
+
+    [Header("Health Bar")]
+    [SerializeField] private RectTransform healthBarTransform;
+    [SerializeField] private TMP_Text healthBarText;
 
     private Spawner _spawner;
+
+    private int _currentScore;
 
     private void Awake()
     {   
@@ -28,6 +43,8 @@ public class GameplayUI: MonoBehaviour
     private void Start()
     {
         player.OnDeath += OnGameOver;
+        player.OnHealthChange += UpadteHealthBar;
+        scoreManager.OnScoreChanged += UpdateScoreText;
     }
 
     private void OnNewWave(int waveIndex)
@@ -45,6 +62,20 @@ public class GameplayUI: MonoBehaviour
 
         StopCoroutine(AnimateWavePanel());
         StartCoroutine(AnimateWavePanel());
+    }
+
+    private void UpdateScoreText(int score)
+    {
+        _currentScore = score;
+
+        gameplayScoreText.text = $"<size=70%>Score:</size> <color=#BFD760><b>{_currentScore:D6}</b></color>";
+    }
+
+    private void UpadteHealthBar(float health)
+    {
+        healthBarTransform.localScale = new Vector3(Mathf.Clamp(health / player.startingHealth, 0, 1), 1, 1);
+        string newHealth = health < 0 ? "0" : health.ToString();
+        healthBarText.text = newHealth + "/" + Mathf.CeilToInt(player.startingHealth).ToString();
     }
 
     IEnumerator AnimateWavePanel()

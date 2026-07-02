@@ -21,16 +21,15 @@ public class Player : LivingEntity
     private InputAction _reload;
     #endregion
 
-    #region Debug Session
-    private InputAction _debugNextWave;
-    public event Action OnDebugNextWave;
-    #endregion
-
     [SerializeField] private Animator _animator;
     [SerializeField] private float timeBetweenEmote = 5f;
 
+    #region Debug Session
+    private InputAction _debugNextWave;
+    public event Action OnDebugNextWave;
     [Header("Debug Session")]
     [SerializeField] private bool debugToolsEnable;
+    #endregion
 
     private float emoteTime;
 
@@ -142,7 +141,8 @@ public class Player : LivingEntity
     }
 
      public override void Die()
-    {
+    {   
+        AudioManager.Instance.PlaySound2D("Player Death");
         base.Die();
         Cursor.visible = true;
     }

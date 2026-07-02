@@ -138,6 +138,11 @@ public class Spawner : MonoBehaviour
 
     void NextWave()
     {
+        if(_currentWaveNumber > 0)
+        {
+            AudioManager.Instance.PlaySound2D("New Level");
+        }
+
         _currentWaveNumber++;
 
         if(_currentWaveNumber - 1 < waves.Length)
@@ -154,7 +159,8 @@ public class Spawner : MonoBehaviour
 
     private void HandleDebugNextWave()
     {
-        StopCoroutine(_spawnCoroutine);
+        if(_spawnCoroutine != null) StopCoroutine(_spawnCoroutine);
+        
         _spawnCoroutine = null;
 
         foreach(Enemy enemy in FindObjectsByType<Enemy>(FindObjectsSortMode.None))

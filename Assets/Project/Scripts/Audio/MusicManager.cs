@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
 
 public class MusicManager : MonoBehaviour, IDebugUser
 {
@@ -8,23 +9,52 @@ public class MusicManager : MonoBehaviour, IDebugUser
 
     private AudioManager _audiomanager;
 
+    private void OnEnable()
+    {
+        SceneManager.sceneLoaded += OnSceneLoaded;    
+    }
+
+    private void OnDisable()
+    {
+       SceneManager.sceneLoaded -= OnSceneLoaded; 
+       //_debugPlayerControls.Debug.Disable();     
+    }
+
     private void Start()
     {
-        InitializeInputActionAsset();
-        CacheDebugInput();
+       //InitializeInputActionAsset();
+       //CacheDebugInput();
 
         _audiomanager = GetComponent<AudioManager>();
-        _audiomanager.PlayMusic(menuTheme);
     }
 
-    private void Update()
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
-        //TODO: Debug - REMOVER
-        if (_debugPlayMainTheme.WasPressedThisFrame())
+        if(_audiomanager == null)
+        {
+            _audiomanager = GetComponent<AudioManager>();
+        }
+        
+        _audiomanager.SetAudioListener();
+
+        if(scene.buildIndex == 0)
+        {
+            _audiomanager.PlayMusic(menuTheme);
+        }
+        else
         {
             _audiomanager.PlayMusic(mainTheme);
-        } 
+        }
     }
+
+    //private void Update()
+    //{
+    //    //TODO: Debug - REMOVER
+    //    if (_debugPlayMainTheme.WasPressedThisFrame())
+    //    {
+    //        _audiomanager.PlayMusic(mainTheme);
+    //    } 
+    //}
 
     #region Debug Section
 

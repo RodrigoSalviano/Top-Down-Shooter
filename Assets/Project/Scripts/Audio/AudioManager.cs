@@ -6,16 +6,29 @@ public class AudioManager : MonoBehaviour
 {
     public static AudioManager Instance {get; private set;}
 
+    public enum AudioChannel
+    {
+        Music,
+        SFX,
+        Master
+    }
+
     [Header ("Volume Settings")]
     [SerializeField] private float _masterVolumePerct = 1f;
     [SerializeField] private float _musicVolumePerct  = 1f;
     [SerializeField] private float _sfxVolumePerct    = 1f;
 
+    public float MasterVolume => _masterVolumePerct;
+    public float MusicVolume => _musicVolumePerct;
+    public float SfxVolume => _sfxVolumePerct;
+
+    private AudioSource _2DAudioSource;
     private AudioSource[] _audioSources;
+    private SoundLibrary _soundLibrary;
     private int _activeAudioSourcesIndex;
 
     private Transform _audioListener_T;
-    private Transform _player_T;
+    private Player _player;
 
     private void Awake()
     {
@@ -27,8 +40,13 @@ public class AudioManager : MonoBehaviour
         }
 
         Instance = this;
+        DontDestroyOnLoad(gameObject);
+
+        _soundLibrary = GetComponent<SoundLibrary>();
 
         _audioSources = new AudioSource[2];
+
+        LoadPlayerPrefs();
 
         for(int i = 0; i < _audioSources.Length; i++)
         {
@@ -39,16 +57,43 @@ public class AudioManager : MonoBehaviour
             _audioSources[i].transform.parent = transform;
         }
 
+        GameObject new2DSource = new GameObject("2D Audio Source");
+        _2DAudioSource = new2DSource.AddComponent<AudioSource>();
+        _2DAudioSource.transform.parent = transform;
+
         _audioListener_T = GetComponentInChildren<AudioListener>().transform;
-        _player_T = FindFirstObjectByType<Player>().transform;
+
+        SetAudioListener();
     }
 
     private void Update()
     {
-        if(_audioListener_T != null && _player_T != null)
+        if(_audioListener_T != null && _player != null)
         {
-            _audioListener_T.position = _player_T.position;
+            _audioListener_T.position = _player.transform.position;
         }
+    }
+
+    public void SetVolume(float _volumePerct, AudioChannel _channel)
+    {
+        switch (_channel)
+        {
+            case AudioChannel.Master:
+                _masterVolumePerct =  _volumePerct;
+                break;
+            case AudioChannel.Music:
+                _musicVolumePerct = _volumePerct;
+                break;
+            case AudioChannel.SFX:
+                _sfxVolumePerct =  _volumePerct;
+                break;
+            
+        }
+
+        _audioSources[0].volume = _musicVolumePerct * _masterVolumePerct;
+        _audioSources[1].volume = _musicVolumePerct * _masterVolumePerct;
+
+        SavePlayerPrefs();
     }
 
     public void PlaySoundFX(AudioClip _clip, Vector3 _pos)
@@ -57,6 +102,16 @@ public class AudioManager : MonoBehaviour
         {
             AudioSource.PlayClipAtPoint(_clip, _pos, _sfxVolumePerct * _masterVolumePerct);
         }
+    }
+
+    public void PlaySoundFX(string _groupName, Vector3 _pos)
+    {
+        PlaySoundFX(_soundLibrary.GetAudioClipFromGroup(_groupName), _pos);
+    }
+
+    public void PlaySound2D(string _groupName)
+    {
+        _2DAudioSource.PlayOneShot(_soundLibrary.GetAudioClipFromGroup(_groupName), _sfxVolumePerct * _masterVolumePerct);
     }
 
     public void PlayMusic(AudioClip _clip, float _fadeDuration = 1f)
@@ -82,4 +137,50 @@ public class AudioManager : MonoBehaviour
             yield return null;
         }
     }
+
+    private void PlayGameOverMusic()
+    {
+        PlayMusic(_soundLibrary.GetAudioClipFromGroup("Game Over"));
+    }
+
+    public void SetAudioListener()
+    {
+        if(FindFirstObjectByType<Player>() != null)
+        {
+           _player = FindFirstObjectByType<Player>();
+           _player.OnDeath += PlayGameOverMusic; 
+        }
+    }
+
+    private void SavePlayerPrefs()
+    {
+        PlayerPrefs.SetFloat("Master Volume", _masterVolumePerct);
+        PlayerPrefs.SetFloat("Music Volume", _musicVolumePerct);
+        PlayerPrefs.SetFloat("SFX Volume", _sfxVolumePerct);
+        PlayerPrefs.Save();
+    }
+
+    private void LoadPlayerPrefs()
+    {
+        if(PlayerPrefs.HasKey("Master Volume"))
+        {
+            _masterVolumePerct = PlayerPrefs.GetFloat("Master Volume");
+        }
+        else
+            _masterVolumePerct = .5f;
+        if(PlayerPrefs.HasKey("Music Volume"))
+        {
+            _musicVolumePerct = PlayerPrefs.GetFloat("Music Volume");
+        }
+        else
+            _musicVolumePerct = .5f;
+        if(PlayerPrefs.HasKey("SFX Volume"))
+        {
+            _sfxVolumePerct = PlayerPrefs.GetFloat("SFX Volume");
+        }
+        else
+            _sfxVolumePerct = .5f;
+
+    }
+
 }

@@ -6,15 +6,22 @@ using UnityEngine.AI;
 
 public class Enemy : LivingEntity
 {
+    public static System.Action OnEnemyDeathStatic;
+
     public enum State {Idle, Chasing, Attacking};
 
     private NavMeshAgent _agent;
     private Transform _target;
     private State _currentState;
-    private Material _skinMaterial;
-    private Material _sharedSkinMaterial;
+
     private Color _originalColor;
     private LivingEntity _targetEntity;
+
+    //Animator
+
+    private Renderer _skinRenderer;
+    private MaterialPropertyBlock _materialBlock;
+    private Material _sharedMaterial;
 
     [Header("Attack Settings")]
     [SerializeField] private float attackDistanceTreshHold = .5f;
@@ -28,7 +35,8 @@ public class Enemy : LivingEntity
 
     [Header("Effects")]
     [SerializeField] private ParticleSystem deathEffect;
-    
+
+    private static readonly int BaseColorProperty = Shader.PropertyToID("_BaseColor");
 
     private bool _hasTarget;
     private float _nextAttackTime;
@@ -38,6 +46,11 @@ public class Enemy : LivingEntity
     private void Awake()
     {
         _agent = GetComponent<NavMeshAgent>();
+
+        _skinRenderer = GetComponent<Renderer>();
+        _materialBlock = new MaterialPropertyBlock();
+        _sharedMaterial = _skinRenderer.sharedMaterial;
+
         _myCollisionRadius = GetComponent<CapsuleCollider>().radius;
          if(GameObject.FindGameObjectWithTag("Player") != null)
         {
@@ -93,15 +106,18 @@ public class Enemy : LivingEntity
         }
         startingHealth = enemyHealth;
 
-        _skinMaterial = GetComponent<Renderer>().sharedMaterial;
-        _skinMaterial.color = skinColor;
         _originalColor = skinColor;
+        SetSkinColor(_originalColor);
     }
 
     public override void TakeHit(float damage, Vector3 hitPoint, Vector3 hitDirection)
-    {
+    {   
+        AudioManager.Instance.PlaySoundFX("Impact", transform.position);
+
         if(damage >= _health)
-        {
+        {   
+            AudioManager.Instance.PlaySoundFX("Enemy Death", transform.position);
+
             Destroy(
                 Instantiate(deathEffect, hitPoint, Quaternion.FromToRotation(Vector3.forward, hitDirection)),
                 deathEffect.main.startLifetime.constant
@@ -117,6 +133,18 @@ public class Enemy : LivingEntity
         _currentState = State.Idle;
     }
 
+    public override void Die()
+    {
+        OnEnemyDeathStatic?.Invoke();
+
+        if (_hasTarget)
+        {
+            _targetEntity.OnDeath -= OnTargetDepth;
+        }
+
+        base.Die();
+    }
+
     IEnumerator Attack()
     {
         _currentState = State.Attacking;
@@ -130,7 +158,9 @@ public class Enemy : LivingEntity
         float attackSpeed = 3f;
         bool hasAppliedDamage = false;
 
-        _skinMaterial.color = colorOnAttack;
+        SetSkinColor(colorOnAttack);
+
+        //animator.settrigger("nome do parametro")
 
         while(percent <= 1)
         {
@@ -139,6 +169,7 @@ public class Enemy : LivingEntity
             {
                 _targetEntity.TakeDamage(damage);
                 hasAppliedDamage = true;
+                AudioManager.Instance.PlaySoundFX("Enemy Attack", transform.position);
             }
 
             percent += Time.deltaTime * attackSpeed;
@@ -147,8 +178,9 @@ public class Enemy : LivingEntity
 
             yield return null;
         }
+        //animator.settrigger("nome do parametro")
 
-        _skinMaterial.color = _originalColor;
+        SetSkinColor(_originalColor);
         _currentState = State.Chasing;
         _agent.enabled = true;
 
@@ -169,5 +201,15 @@ public class Enemy : LivingEntity
             }
             yield return new WaitForSeconds(refreshRate);
         }
+    }
+
+    private void SetSkinColor(Color _color)
+    {
+        _skinRenderer.GetPropertyBlock(_materialBlock);
+
+        _materialBlock.SetColor(BaseColorProperty, _color);
+        _sharedMaterial.SetColor(BaseColorProperty, _color);
+
+        _skinRenderer.SetPropertyBlock(_materialBlock);
     }
 }

@@ -9,6 +9,7 @@ public class LivingEntity : MonoBehaviour, IDamageable
     protected bool _dead;
 
     public event Action OnDeath;
+    public event Action<float> OnHealthChange;
 
     protected virtual void Start()
     {
@@ -28,6 +29,8 @@ public class LivingEntity : MonoBehaviour, IDamageable
         {
             Die();
         }
+
+        OnHealthChange?.Invoke(_health);
     }
 
     [ContextMenu("Die")]
